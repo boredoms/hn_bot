@@ -10,6 +10,27 @@ def read_token() -> str:
         return token.strip()
 
 
+def write_seen(seen: set[str]):
+    with open("cache/seen.txt", "w") as f:
+        for id in seen:
+            f.write(f"{id}\n")
+
+
+def read_seen():
+    seen = set()
+
+    try:
+        f = open("cache/seen.txt")
+    except:
+        return seen
+    else:
+        with f:
+            for line in f.readlines():
+                seen.add(int(line.strip()))
+
+    return seen
+
+
 def create_post(id: str) -> str | None:
     item = hn_api.get_item(id)
 
@@ -36,7 +57,9 @@ def main():
     print("Hello from hn-bot!")
     token = read_token()
 
-    seen = set()
+    # check if a cache exists
+
+    seen = read_seen()
 
     while True:
         top_posts = hn_api.get_topstories()
@@ -64,6 +87,7 @@ def main():
             # avoid hitting the rate limit
             time.sleep(3)
 
+        write_seen(seen)
         time.sleep(10)
 
 
