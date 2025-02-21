@@ -6,5 +6,4 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "httpx>=0.28.1",
-    "python-telegram-bot[job-queue,rate-limiter]>=21.10",
 ]

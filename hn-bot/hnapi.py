@@ -1,5 +1,4 @@
 import httpx
-import json
 
 # This file implements a simple interface for the public HN API using httpx
 # Currently only synchronous methods are provided, this may change in the future.
@@ -13,7 +12,7 @@ def get_json(request_url: str):
 
     # error handling here
 
-    return json.loads(response.text)
+    return response.json()
 
 
 def get(request_params: list[str]):
