@@ -79,6 +79,5 @@ def get_updates():
     return get_root(file)
 
 
-id = get_maxitem()
-print(get_item(id))
-print(get_newstories())
+if __name__ == "__main__":
+    print("owo")
