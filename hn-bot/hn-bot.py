@@ -1,6 +1,8 @@
 import hn_api
 import tg_api
 
+import time
+
 
 def read_token() -> str:
     with open("bot-token") as f:
@@ -12,30 +14,40 @@ def main():
     print("Hello from hn-bot!")
     token = read_token()
 
-    top_posts = hn_api.get_topstories()
+    seen = set()
 
-    if top_posts is None:
-        print("Error getting posts")
-        return
+    while True:
+        top_posts = hn_api.get_topstories()
 
-    top_posts = top_posts[:3]
+        if top_posts is None:
+            print("Error getting posts")
+            return
 
-    for id in top_posts:
-        item = hn_api.get_item(id)
+        top_posts = top_posts[:3]
 
-        if item is None:
-            continue
+        for id in top_posts:
+            if id in seen:
+                print(f"alread saw {id}")
+                continue
 
-        if "url" not in item:
-            print("Post does not have url")
-            continue
+            seen.add(id)
+            item = hn_api.get_item(id)
 
-        title = item["title"]
-        url = item["url"]
+            if item is None:
+                continue
 
-        post_text = f"<b>{title}</b>\n<i>Link:</i> {url}"
+            if "url" not in item:
+                print("Post does not have url")
+                continue
 
-        tg_api.send_message(token, "@distraction_free_hacker_news", post_text)
+            title = item["title"]
+            url = item["url"]
+
+            post_text = f"<b>{title}</b>\n<i>Link:</i> {url}"
+
+            tg_api.send_message(token, "@distraction_free_hacker_news", post_text)
+
+        time.sleep(10)
 
 
 if __name__ == "__main__":
