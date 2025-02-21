@@ -1,4 +1,5 @@
-import hnapi
+import hn_api
+import tg_api
 
 
 def read_token() -> str:
