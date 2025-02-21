@@ -10,6 +10,28 @@ def read_token() -> str:
         return token.strip()
 
 
+def create_post(id: str) -> str | None:
+    item = hn_api.get_item(id)
+
+    if item is None:
+        return None
+
+    if "url" not in item:
+        print(f"Post {id} does not have url")
+        return None
+
+    if item["score"] < 30:
+        print(f"Item {id} score too low")
+        return None
+
+    title = item["title"]
+    url = item["url"]
+
+    post_text = f"<b>{title}</b>\n<i>Link: {url}</i>"
+
+    return post_text
+
+
 def main():
     print("Hello from hn-bot!")
     token = read_token()
@@ -31,21 +53,16 @@ def main():
                 continue
 
             seen.add(id)
-            item = hn_api.get_item(id)
 
-            if item is None:
+            post_text = create_post(id)
+
+            if post_text is None:
                 continue
-
-            if "url" not in item:
-                print("Post does not have url")
-                continue
-
-            title = item["title"]
-            url = item["url"]
-
-            post_text = f"<b>{title}</b>\n<i>Link:</i> {url}"
 
             tg_api.send_message(token, "@distraction_free_hacker_news", post_text)
+
+            # avoid hitting the rate limit
+            time.sleep(3)
 
         time.sleep(10)
 
