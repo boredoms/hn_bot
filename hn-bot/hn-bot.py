@@ -47,8 +47,10 @@ def create_post(id: str) -> str | None:
 
     title = item["title"]
     url = item["url"]
+    score = item["score"]
+    descendants = item["descendants"]
 
-    post_text = f"<b>{title}</b>\n<i>Link: {url}</i>"
+    post_text = f"<b>{title}</b>\n\n<i>Link: {url}</i>\n\nKarma: {score}, Comments: {descendants}"
 
     return post_text
 
