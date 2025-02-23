@@ -11,3 +11,6 @@ wheels/
 
 # Secrets
 bot-token
+
+# Project files
+cache

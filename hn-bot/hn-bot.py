@@ -10,14 +10,14 @@ def read_token() -> str:
         return token.strip()
 
 
-def write_seen(seen: set[str]):
+def write_seen(seen: dict):
     with open("cache/seen.txt", "w") as f:
-        for id in seen:
-            f.write(f"{id}\n")
+        for item_id, post_id in seen.items():
+            f.write(f"{item_id},{post_id}\n")
 
 
 def read_seen():
-    seen = set()
+    seen = {}
 
     try:
         f = open("cache/seen.txt")
@@ -26,7 +26,8 @@ def read_seen():
     else:
         with f:
             for line in f.readlines():
-                seen.add(int(line.strip()))
+                item_id, post_id = line.split(",")
+                seen[int(item_id)] = int(post_id)
 
     return seen
 
@@ -63,6 +64,8 @@ def main():
 
     seen = read_seen()
 
+    print(seen)
+
     while True:
         top_posts = hn_api.get_topstories()
 
@@ -77,14 +80,18 @@ def main():
                 print(f"alread saw {id}")
                 continue
 
-            seen.add(id)
-
             post_text = create_post(id)
 
             if post_text is None:
                 continue
 
-            tg_api.send_message(token, "@distraction_free_hacker_news", post_text)
+            response = tg_api.send_message(
+                token, "@distraction_free_hacker_news", post_text
+            )
+
+            post_id = response["result"]["message_id"]
+
+            seen[id] = post_id
 
             # avoid hitting the rate limit
             time.sleep(3)
