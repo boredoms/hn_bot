@@ -1,7 +1,58 @@
-import hn_api
-import tg_api
+import apis.hn_api as hn_api
+import apis.tg_api as tg_api
 
 import time
+import asyncio
+
+from dataclasses import dataclass
+from typing import AsyncIterator, ClassVar
+
+from queue import Queue
+
+post_queue = Queue()
+
+RATE_LIMIT = 3
+
+
+@dataclass(frozen=True)
+class BotConfig:
+    token: str
+    post_template: str
+    rate_limit: int
+
+    instance: ClassVar = None
+    token_path: ClassVar[str] = "bot-token"
+
+    @staticmethod
+    def get_instance():
+        if BotConfig.instance is None:
+            BotConfig.instance = BotConfig(
+                token=read_token(), post_template="", rate_limit=RATE_LIMIT
+            )
+
+        return BotConfig.instance
+
+
+def format_post(item) -> str:
+    template = "<b>{}</b>\n\n<i>Link: {}</i>\n\nKarma: {}, Comments: {}"
+
+    return template.format(
+        item["title"], item["url"], item["score"], item["descendants"]
+    )
+
+
+async def fetch_post(id: str) -> tuple[int, str] | None:
+    item = hn_api.get_item(id)
+
+    if item is None:
+        print(f"fetching the post failed (id={id})")
+        return None
+
+    if "url" not in item:
+        print(f"post {id} does not have a URL")
+        return None
+
+    return (item["id"], format_post(item))
 
 
 def read_token() -> str:
@@ -56,9 +107,9 @@ def create_post(id: str) -> str | None:
     return post_text
 
 
-def main():
+async def main():
     print("Hello from hn-bot!")
-    token = read_token()
+    config = BotConfig.get_instance()
 
     # check if a cache exists
 
@@ -70,30 +121,24 @@ def main():
         top_posts = hn_api.get_topstories()
 
         if top_posts is None:
-            print("Error getting posts")
+            print("Error getting top posts")
             return
 
         top_posts = top_posts[:3]
 
-        for id in top_posts:
-            if id in seen:
-                print(f"alread saw {id}")
-                continue
+        posts = await asyncio.gather(
+            *[fetch_post(id) for id in top_posts if id not in seen]
+        )
 
-            post_text = create_post(id)
-
-            if post_text is None:
-                continue
-
+        for id, post in filter(lambda x: x is not None, posts):
             response = tg_api.send_message(
-                token, "@distraction_free_hacker_news", post_text
+                config.token, "@distraction_free_hacker_news", post
             )
 
             post_id = response["result"]["message_id"]
 
             seen[id] = post_id
 
-            # avoid hitting the rate limit
             time.sleep(3)
 
         write_seen(seen)
@@ -101,4 +146,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

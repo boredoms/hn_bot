@@ -81,7 +81,3 @@ def get_jobstories():
 def get_updates():
     file = "updates.json"
     return get_root(file)
-
-
-if __name__ == "__main__":
-    print("owo")
