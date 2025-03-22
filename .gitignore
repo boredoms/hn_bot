@@ -13,4 +13,4 @@ wheels/
 bot-token
 
 # Project files
-cache
+hn_bot.db
