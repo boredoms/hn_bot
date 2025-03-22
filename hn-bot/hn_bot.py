@@ -3,6 +3,7 @@ import apis.tg_api as tg_api
 
 import time
 import asyncio
+import sqlite3
 
 from dataclasses import dataclass
 from typing import AsyncIterator, ClassVar
@@ -19,15 +20,25 @@ class BotConfig:
     token: str
     post_template: str
     rate_limit: int
+    db_connection: sqlite3.Connection
 
     instance: ClassVar = None
     token_path: ClassVar[str] = "bot-token"
 
     @staticmethod
-    def get_instance():
+    def get():
         if BotConfig.instance is None:
             BotConfig.instance = BotConfig(
-                token=read_token(), post_template="", rate_limit=RATE_LIMIT
+                token=read_token(),
+                post_template="",
+                rate_limit=RATE_LIMIT,
+                db_connection=sqlite3.connect("hn_bot.db"),
+            )
+
+            # when initializing the config instance, we want to craete the table if it does not exist, as connect might create a new table
+            cursor = BotConfig.instance.db_connection.cursor()
+            cursor.execute(
+                "CREATE TABLE IF NOT EXISTS posts(hn_id INTEGER PRIMARY KEY, url TEXT, title TEXT, date INTEGER, score INTEGER, comments INTEGER, tg_id INTEGER)"
             )
 
         return BotConfig.instance
@@ -52,6 +63,8 @@ async def fetch_post(id: str) -> tuple[int, str] | None:
         print(f"post {id} does not have a URL")
         return None
 
+    insert_item(item)
+
     return (item["id"], format_post(item))
 
 
@@ -59,6 +72,17 @@ def read_token() -> str:
     with open("bot-token") as f:
         token = f.readline()
         return token.strip()
+
+
+def insert_item(item):
+    print(f"inserting {item}")
+
+    cursor = BotConfig.get().db_connection.cursor()
+
+    cursor.execute(
+        "INSERT INTO posts VALUES(:id, :url, :title, :time, :score, :descendants, 0)",
+        item,
+    )
 
 
 def write_seen(seen: dict):
@@ -83,33 +107,9 @@ def read_seen():
     return seen
 
 
-def create_post(id: str) -> str | None:
-    item = hn_api.get_item(id)
-
-    if item is None:
-        return None
-
-    if "url" not in item:
-        print(f"Post {id} does not have url")
-        return None
-
-    if item["score"] < 30:
-        print(f"Item {id} score too low")
-        return None
-
-    title = item["title"]
-    url = item["url"]
-    score = item["score"]
-    descendants = item["descendants"]
-
-    post_text = f"<b>{title}</b>\n\n<i>Link: {url}</i>\n\nKarma: {score}, Comments: {descendants}"
-
-    return post_text
-
-
 async def main():
     print("Hello from hn-bot!")
-    config = BotConfig.get_instance()
+    config = BotConfig.get()
 
     # check if a cache exists
 
