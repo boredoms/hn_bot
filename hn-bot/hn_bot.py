@@ -75,14 +75,19 @@ def read_token() -> str:
 
 
 def insert_item(item):
-    print(f"inserting {item}")
-
     cursor = BotConfig.get().db_connection.cursor()
 
     cursor.execute(
         "INSERT INTO posts VALUES(:id, :url, :title, :time, :score, :descendants, 0)",
         item,
     )
+
+
+def already_posted(id: int) -> bool:
+    cursor = BotConfig.get().db_connection.cursor()
+    res = cursor.execute("SELECT 1 FROM posts WHERE hn_id = ?", (id,)).fetchone()
+
+    return res is not None
 
 
 def write_seen(seen: dict):
@@ -111,12 +116,6 @@ async def main():
     print("Hello from hn-bot!")
     config = BotConfig.get()
 
-    # check if a cache exists
-
-    seen = read_seen()
-
-    print(seen)
-
     while True:
         top_posts = hn_api.get_topstories()
 
@@ -127,8 +126,11 @@ async def main():
         top_posts = top_posts[:3]
 
         posts = await asyncio.gather(
-            *[fetch_post(id) for id in top_posts if id not in seen]
+            *[fetch_post(id) for id in top_posts if not already_posted(id)]
         )
+
+        # insert the posts that are going to be made
+        BotConfig.get().db_connection.commit()
 
         for id, post in filter(lambda x: x is not None, posts):
             response = tg_api.send_message(
@@ -137,11 +139,12 @@ async def main():
 
             post_id = response["result"]["message_id"]
 
-            seen[id] = post_id
+            cursor = BotConfig.get().db_connection.cursor()
+            cursor.execute("UPDATE posts SET tg_id = ? WHERE hn_id = ?", (post_id, id))
 
             time.sleep(3)
 
-        write_seen(seen)
+        BotConfig.get().db_connection.commit()
         time.sleep(10)
 
 
