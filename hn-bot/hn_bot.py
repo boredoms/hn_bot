@@ -59,9 +59,10 @@ async def main():
             if post is None:
                 continue
 
-            if not p.already_posted(post["id"]):
-                message_body = format_post(post)
+            post_id = p.get_postid(post["id"])
+            message_body = format_post(post)
 
+            if post_id is None:
                 response = tg_api.send_message(
                     config.token, "@distraction_free_hacker_news", message_body
                 )
@@ -71,6 +72,21 @@ async def main():
 
                 p.insert_post(post)
             else:
+                # check if there is a difference
+                (score, comments) = p.get_post_scores(post)
+
+                if post["score"] == score and post["descendants"] == comments:
+                    continue
+
+                print(f"updating post {post_id}")
+
+                tg_api.edit_message_text(
+                    config.token,
+                    "@distraction_free_hacker_news",
+                    str(post_id),
+                    message_body,
+                )
+
                 p.update_post(post)
 
             time.sleep(3)

@@ -25,17 +25,48 @@ def update_post(item: dict):
     cursor = BotConfig.get().db_connection.cursor()
 
     cursor.execute(
-        "UPDATE posts SET score = :score, comments = :comments WHERE hn_id = :id",
+        "UPDATE posts SET score = :score, comments = :descendants WHERE hn_id = :id",
         item,
     )
 
 
-# check if the post and its corresponding id already exists in the DB
-def already_posted(id: int) -> bool:
+def get_post_karma(item: dict):
     cursor = BotConfig.get().db_connection.cursor()
-    res = cursor.execute("SELECT 1 FROM posts WHERE hn_id = ?", (id,)).fetchone()
 
-    return res is not None
+    res = cursor.execute("SELECT score FROM posts WHERE hn_id = :id", item).fetchone()
+
+    return res[0]
+
+
+def get_post_comments(item: dict):
+    cursor = BotConfig.get().db_connection.cursor()
+
+    res = cursor.execute(
+        "SELECT comments FROM posts WHERE hn_id = :id", item
+    ).fetchone()
+
+    return res[0]
+
+
+def get_post_scores(item: dict):
+    cursor = BotConfig.get().db_connection.cursor()
+
+    res = cursor.execute(
+        "SELECT score, comments FROM posts WHERE hn_id = :id", item
+    ).fetchone()
+
+    return res
+
+
+# check if the post and its corresponding id already exists in the DB
+def get_postid(id: int) -> int | None:
+    cursor = BotConfig.get().db_connection.cursor()
+    res = cursor.execute("SELECT tg_id FROM posts WHERE hn_id = ?", (id,)).fetchone()
+
+    if res is None:
+        return None
+    else:
+        return res[0]
 
 
 def commit():
