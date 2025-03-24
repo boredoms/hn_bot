@@ -1,9 +1,11 @@
 import apis.hn_api as hn_api
 import apis.tg_api as tg_api
+import persistence as p
 
 import time
 import asyncio
-import sqlite3
+
+from bot_config import BotConfig
 
 from dataclasses import dataclass
 from typing import AsyncIterator, ClassVar
@@ -11,37 +13,6 @@ from typing import AsyncIterator, ClassVar
 from queue import Queue
 
 post_queue = Queue()
-
-RATE_LIMIT = 3
-
-
-@dataclass(frozen=True)
-class BotConfig:
-    token: str
-    post_template: str
-    rate_limit: int
-    db_connection: sqlite3.Connection
-
-    instance: ClassVar = None
-    token_path: ClassVar[str] = "bot-token"
-
-    @staticmethod
-    def get():
-        if BotConfig.instance is None:
-            BotConfig.instance = BotConfig(
-                token=read_token(),
-                post_template="",
-                rate_limit=RATE_LIMIT,
-                db_connection=sqlite3.connect("hn_bot.db"),
-            )
-
-            # when initializing the config instance, we want to craete the table if it does not exist, as connect might create a new table
-            cursor = BotConfig.instance.db_connection.cursor()
-            cursor.execute(
-                "CREATE TABLE IF NOT EXISTS posts(hn_id INTEGER PRIMARY KEY, url TEXT, title TEXT, date INTEGER, score INTEGER, comments INTEGER, tg_id INTEGER)"
-            )
-
-        return BotConfig.instance
 
 
 def format_post(item) -> str:
@@ -52,7 +23,7 @@ def format_post(item) -> str:
     )
 
 
-async def fetch_post(id: str) -> tuple[int, str] | None:
+async def fetch_post(id: str) -> dict | None:
     item = hn_api.get_item(id)
 
     if item is None:
@@ -63,53 +34,7 @@ async def fetch_post(id: str) -> tuple[int, str] | None:
         print(f"post {id} does not have a URL")
         return None
 
-    insert_item(item)
-
-    return (item["id"], format_post(item))
-
-
-def read_token() -> str:
-    with open("bot-token") as f:
-        token = f.readline()
-        return token.strip()
-
-
-def insert_item(item):
-    cursor = BotConfig.get().db_connection.cursor()
-
-    cursor.execute(
-        "INSERT INTO posts VALUES(:id, :url, :title, :time, :score, :descendants, 0)",
-        item,
-    )
-
-
-def already_posted(id: int) -> bool:
-    cursor = BotConfig.get().db_connection.cursor()
-    res = cursor.execute("SELECT 1 FROM posts WHERE hn_id = ?", (id,)).fetchone()
-
-    return res is not None
-
-
-def write_seen(seen: dict):
-    with open("cache/seen.txt", "w") as f:
-        for item_id, post_id in seen.items():
-            f.write(f"{item_id},{post_id}\n")
-
-
-def read_seen():
-    seen = {}
-
-    try:
-        f = open("cache/seen.txt")
-    except:
-        return seen
-    else:
-        with f:
-            for line in f.readlines():
-                item_id, post_id = line.split(",")
-                seen[int(item_id)] = int(post_id)
-
-    return seen
+    return item
 
 
 async def main():
@@ -125,26 +50,32 @@ async def main():
 
         top_posts = top_posts[:3]
 
-        posts = await asyncio.gather(
-            *[fetch_post(id) for id in top_posts if not already_posted(id)]
-        )
+        posts = await asyncio.gather(*[fetch_post(id) for id in top_posts])
 
         # insert the posts that are going to be made
         BotConfig.get().db_connection.commit()
 
-        for id, post in filter(lambda x: x is not None, posts):
-            response = tg_api.send_message(
-                config.token, "@distraction_free_hacker_news", post
-            )
+        for post in posts:
+            if post is None:
+                continue
 
-            post_id = response["result"]["message_id"]
+            if not p.already_posted(post["id"]):
+                message_body = format_post(post)
 
-            cursor = BotConfig.get().db_connection.cursor()
-            cursor.execute("UPDATE posts SET tg_id = ? WHERE hn_id = ?", (post_id, id))
+                response = tg_api.send_message(
+                    config.token, "@distraction_free_hacker_news", message_body
+                )
+
+                tg_id = response["result"]["message_id"]
+                post["tg_id"] = tg_id
+
+                p.insert_post(post)
+            else:
+                p.update_post(post)
 
             time.sleep(3)
 
-        BotConfig.get().db_connection.commit()
+        p.commit()
         time.sleep(10)
 
 
