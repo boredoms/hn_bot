@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 import sqlite3
 from typing import ClassVar
-import persistence as p
-from rate_limiter import RateLimiter
+import hn_bot
+from hn_bot.rate_limiter import RateLimiter
 import httpx
 
 
@@ -27,7 +27,7 @@ class BotConfig:
     @staticmethod
     def get():
         if BotConfig.instance is None:
-            connection = p.connect()
+            connection = hn_bot.persistence.connect()
             cursor = connection.cursor()
 
             BotConfig.instance = BotConfig(
@@ -40,6 +40,6 @@ class BotConfig:
             )
 
             # when initializing the config instance, we want to create the table if it does not exist
-            p.create_database(BotConfig.instance.db_connection)
+            hn_bot.persistence.create_database(BotConfig.instance.db_connection)
 
         return BotConfig.instance

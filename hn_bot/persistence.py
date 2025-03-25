@@ -1,5 +1,5 @@
 import sqlite3
-from bot_config import BotConfig
+from hn_bot.bot_config import BotConfig
 
 
 def connect():
@@ -71,7 +71,7 @@ def get_postid(id: int) -> int | None:
 
 def get_post(id: int):
     cursor = BotConfig.get().db_cursor
-    res = cursor.execute("SECECT * from posts WHERE hn_id = ?", (id,)).fetchone()
+    res = cursor.execute("SELECT * from posts WHERE hn_id = ?", (id,)).fetchone()
 
     return res
 
