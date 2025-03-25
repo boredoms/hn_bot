@@ -40,9 +40,3 @@ def get_me(token: str):
     response = httpx.get(request_url)
 
     return response.json()
-
-
-def read_token() -> str:
-    with open("bot-token") as f:
-        token = f.readline()
-        return token.strip()

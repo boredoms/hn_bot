@@ -5,3 +5,8 @@ description = "A telegram bot to scrape hacker news, but in a less distracting w
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = ["httpx>=0.28.1"]
+
+[project.config]
+tg_api_rate = 3
+sleep_time = 10
+post_template = "<b>{}</b>\n\n<i>Link: {}</i>\n\nKarma: {}, Comments: {}"

@@ -7,9 +7,7 @@ import asyncio
 
 
 def format_post(item) -> str:
-    template = "<b>{}</b>\n\n<i>Link: {}</i>\n\nKarma: {}, Comments: {}"
-
-    return template.format(
+    return BotConfig.get().post_template.format(
         item["title"], item["url"], item["score"], item["descendants"]
     )
 
@@ -48,7 +46,7 @@ async def make_or_edit_post(post: dict):
 
     if post_data is None:
         response = await tg_api.send_message(
-            config.token, "@distraction_free_hacker_news", message_body
+            config.tg_api_token, "@distraction_free_hacker_news", message_body
         )
         tg_id = response["result"]["message_id"]
         post["tg_id"] = tg_id
@@ -56,7 +54,7 @@ async def make_or_edit_post(post: dict):
         p.insert_post(post)
     else:
         await tg_api.edit_message_text(
-            config.token,
+            config.tg_api_token,
             "@distraction_free_hacker_news",
             str(post_data[6]),
             message_body,

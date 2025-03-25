@@ -4,6 +4,7 @@ from typing import ClassVar
 import hn_bot
 from hn_bot.rate_limiter import RateLimiter
 import httpx
+import tomllib
 
 
 def read_token() -> str:
@@ -21,7 +22,7 @@ def read_token() -> str:
 # this class is immutable, preventing the usual problem of entagling global state
 @dataclass(frozen=True)
 class BotConfig:
-    token: str
+    tg_api_token: str
     post_template: str
     tg_api_rate_limiter: RateLimiter
     db_connection: sqlite3.Connection
@@ -36,17 +37,27 @@ class BotConfig:
     @staticmethod
     def get():
         if BotConfig.instance is None:
+            config = None
+            secrets = None
+
+            with open("pyproject.toml", "rb") as f:
+                pyproject = tomllib.load(f)
+                config = pyproject["project"]["config"]
+
+            with open("secrets.toml", "rb") as f:
+                secrets = tomllib.load(f)
+
             connection = hn_bot.persistence.connect()
             cursor = connection.cursor()
 
             BotConfig.instance = BotConfig(
-                token=read_token(),
-                post_template="",
-                tg_api_rate_limiter=RateLimiter(1, 3),
+                tg_api_token=secrets["tg_api_token"],
+                post_template=config["post_template"],
+                tg_api_rate_limiter=RateLimiter(1, config["tg_api_rate"]),
                 db_connection=connection,
                 db_cursor=cursor,
                 async_http_client=httpx.AsyncClient(),
-                sleep_time=10,
+                sleep_time=config["sleep_time"],
             )
 
             # when initializing the config instance, we want to create the table if it does not exist

@@ -10,7 +10,7 @@ wheels/
 .venv
 
 # Secrets
-bot-token
+secrets.toml
 
 # Project files
 hn_bot.db
