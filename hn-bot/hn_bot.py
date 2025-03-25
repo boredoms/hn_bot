@@ -37,9 +37,45 @@ async def fetch_post(id: str) -> dict | None:
     return item
 
 
+async def make_or_edit_post(post: dict):
+    config = BotConfig.get()
+
+    # either none or tuple (hn_id, url, title, date, score, comments, tg_id)
+    post_data = p.get_post(post["id"])
+
+    if post_data is not None:
+        # check if there is a difference to the current text in the channel
+        score = post_data[4]
+        comments = post_data[5]
+
+        if post["score"] == score and post["descendants"] == comments:
+            return
+
+    message_body = format_post(post)
+
+    await config.tg_api_rate_limiter.wait()
+
+    if post_data is None:
+        response = tg_api.send_message(
+            config.token, "@distraction_free_hacker_news", message_body
+        )
+
+        tg_id = response["result"]["message_id"]
+        post["tg_id"] = tg_id
+
+        p.insert_post(post)
+    else:
+        tg_api.edit_message_text(
+            config.token,
+            "@distraction_free_hacker_news",
+            str(post_data[6]),
+            message_body,
+        )
+        p.update_post(post)
+
+
 async def main():
     print("Hello from hn-bot!")
-    config = BotConfig.get()
 
     while True:
         top_posts = hn_api.get_topstories()
@@ -59,41 +95,15 @@ async def main():
             if post is None:
                 continue
 
-            post_id = p.get_postid(post["id"])
-            message_body = format_post(post)
-
-            if post_id is None:
-                response = tg_api.send_message(
-                    config.token, "@distraction_free_hacker_news", message_body
-                )
-
-                tg_id = response["result"]["message_id"]
-                post["tg_id"] = tg_id
-
-                p.insert_post(post)
-            else:
-                # check if there is a difference
-                (score, comments) = p.get_post_scores(post)
-
-                if post["score"] == score and post["descendants"] == comments:
-                    continue
-
-                print(f"updating post {post_id}")
-
-                tg_api.edit_message_text(
-                    config.token,
-                    "@distraction_free_hacker_news",
-                    str(post_id),
-                    message_body,
-                )
-
-                p.update_post(post)
-
-            time.sleep(3)
+            asyncio.create_task(make_or_edit_post(post))
 
         p.commit()
-        time.sleep(10)
+        await asyncio.sleep(10)
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("Committing unsaved changes to DB")
+        p.commit()
