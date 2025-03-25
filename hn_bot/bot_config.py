@@ -34,6 +34,9 @@ class BotConfig:
 
     sleep_time: int
 
+    hn_min_karma: int
+    hn_min_comments: int
+
     @staticmethod
     def get():
         if BotConfig.instance is None:
@@ -58,6 +61,8 @@ class BotConfig:
                 db_cursor=cursor,
                 async_http_client=httpx.AsyncClient(),
                 sleep_time=config["sleep_time"],
+                hn_min_karma=config["hn_min_karma"],
+                hn_min_comments=config["hn_min_comments"],
             )
 
             # when initializing the config instance, we want to create the table if it does not exist

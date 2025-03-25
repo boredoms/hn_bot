@@ -10,3 +10,5 @@ dependencies = ["httpx>=0.28.1"]
 tg_api_rate = 3
 sleep_time = 10
 post_template = "<b>{}</b>\n\n<i>Link: {}</i>\n\nKarma: {}, Comments: {}"
+hn_min_karma = 25
+hn_min_commens = 0

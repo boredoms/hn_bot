@@ -72,7 +72,7 @@ async def main():
             print("Error getting top posts")
             return
 
-        top_posts = top_posts[:3]
+        top_posts = top_posts[:10]
 
         posts = await asyncio.gather(*[fetch_post(id) for id in top_posts])
 
@@ -81,6 +81,12 @@ async def main():
 
         for post in posts:
             if post is None:
+                continue
+
+            if (
+                post["score"] < BotConfig.get().hn_min_karma
+                or post["descendants"] < BotConfig.get().hn_min_comments
+            ):
                 continue
 
             asyncio.create_task(make_or_edit_post(post))
