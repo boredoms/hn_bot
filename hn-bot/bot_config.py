@@ -17,6 +17,7 @@ class BotConfig:
     post_template: str
     tg_api_rate_limiter: RateLimiter
     db_connection: sqlite3.Connection
+    db_cursor: sqlite3.Cursor
 
     instance: ClassVar = None
     token_path: ClassVar[str] = "bot-token"
@@ -24,11 +25,15 @@ class BotConfig:
     @staticmethod
     def get():
         if BotConfig.instance is None:
+            connection = p.connect()
+            cursor = connection.cursor()
+
             BotConfig.instance = BotConfig(
                 token=read_token(),
                 post_template="",
                 tg_api_rate_limiter=RateLimiter(1, 3000),
-                db_connection=p.connect(),
+                db_connection=connection,
+                db_cursor=cursor,
             )
 
             # when initializing the config instance, we want to create the table if it does not exist

@@ -13,7 +13,7 @@ def create_database(connection: sqlite3.Connection):
 
 
 def insert_post(item: dict):
-    cursor = BotConfig.get().db_connection.cursor()
+    cursor = BotConfig.get().db_cursor
 
     cursor.execute(
         "INSERT INTO posts VALUES(:id, :url, :title, :time, :score, :descendants, :tg_id)",
@@ -22,7 +22,7 @@ def insert_post(item: dict):
 
 
 def update_post(item: dict):
-    cursor = BotConfig.get().db_connection.cursor()
+    cursor = BotConfig.get().db_cursor
 
     cursor.execute(
         "UPDATE posts SET score = :score, comments = :descendants WHERE hn_id = :id",
@@ -31,7 +31,7 @@ def update_post(item: dict):
 
 
 def get_post_karma(item: dict):
-    cursor = BotConfig.get().db_connection.cursor()
+    cursor = BotConfig.get().db_cursor
 
     res = cursor.execute("SELECT score FROM posts WHERE hn_id = :id", item).fetchone()
 
@@ -39,7 +39,7 @@ def get_post_karma(item: dict):
 
 
 def get_post_comments(item: dict):
-    cursor = BotConfig.get().db_connection.cursor()
+    cursor = BotConfig.get().db_cursor
 
     res = cursor.execute(
         "SELECT comments FROM posts WHERE hn_id = :id", item
@@ -49,7 +49,7 @@ def get_post_comments(item: dict):
 
 
 def get_post_scores(item: dict):
-    cursor = BotConfig.get().db_connection.cursor()
+    cursor = BotConfig.get().db_cursor
 
     res = cursor.execute(
         "SELECT score, comments FROM posts WHERE hn_id = :id", item
@@ -60,13 +60,20 @@ def get_post_scores(item: dict):
 
 # check if the post and its corresponding id already exists in the DB
 def get_postid(id: int) -> int | None:
-    cursor = BotConfig.get().db_connection.cursor()
+    cursor = BotConfig.get().db_cursor
     res = cursor.execute("SELECT tg_id FROM posts WHERE hn_id = ?", (id,)).fetchone()
 
     if res is None:
         return None
     else:
         return res[0]
+
+
+def get_post(id: int):
+    cursor = BotConfig.get().db_cursor
+    res = cursor.execute("SECECT * from posts WHERE hn_id = ?", (id,)).fetchone()
+
+    return res
 
 
 def commit():
