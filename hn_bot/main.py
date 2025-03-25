@@ -50,7 +50,6 @@ async def make_or_edit_post(post: dict):
         response = await tg_api.send_message(
             config.token, "@distraction_free_hacker_news", message_body
         )
-
         tg_id = response["result"]["message_id"]
         post["tg_id"] = tg_id
 
@@ -89,7 +88,7 @@ async def main():
             asyncio.create_task(make_or_edit_post(post))
 
         p.commit()
-        await asyncio.sleep(10)
+        await asyncio.sleep(BotConfig.get().sleep_time)
 
 
 if __name__ == "__main__":

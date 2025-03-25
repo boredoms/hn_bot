@@ -12,6 +12,13 @@ def read_token() -> str:
         return token.strip()
 
 
+# global singleton to hold the configuration of the entire bot
+# making it a singleton ensures that we only have one active database connection/async_http_client
+#
+# since the entire app is single threaded async, this means we save a lot of time running buildup
+# and teardown code for http clients and database connections
+#
+# this class is immutable, preventing the usual problem of entagling global state
 @dataclass(frozen=True)
 class BotConfig:
     token: str
@@ -23,6 +30,8 @@ class BotConfig:
 
     instance: ClassVar = None
     token_path: ClassVar[str] = "bot-token"
+
+    sleep_time: int
 
     @staticmethod
     def get():
@@ -37,6 +46,7 @@ class BotConfig:
                 db_connection=connection,
                 db_cursor=cursor,
                 async_http_client=httpx.AsyncClient(),
+                sleep_time=10,
             )
 
             # when initializing the config instance, we want to create the table if it does not exist
