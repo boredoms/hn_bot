@@ -2,8 +2,7 @@ from dataclasses import dataclass
 import sqlite3
 from typing import AsyncIterator, ClassVar
 import persistence as p
-
-RATE_LIMIT = 3
+from rate_limiter import RateLimiter
 
 
 def read_token() -> str:
@@ -16,7 +15,7 @@ def read_token() -> str:
 class BotConfig:
     token: str
     post_template: str
-    rate_limit: int
+    tg_api_rate_limiter: RateLimiter
     db_connection: sqlite3.Connection
 
     instance: ClassVar = None
@@ -28,7 +27,7 @@ class BotConfig:
             BotConfig.instance = BotConfig(
                 token=read_token(),
                 post_template="",
-                rate_limit=RATE_LIMIT,
+                tg_api_rate_limiter=RateLimiter(1, 3000),
                 db_connection=p.connect(),
             )
 
