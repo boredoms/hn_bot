@@ -1,10 +1,12 @@
-from dataclasses import dataclass
 import sqlite3
+import tomllib
+from dataclasses import dataclass
 from typing import ClassVar
+
+import httpx
+
 import hn_bot
 from hn_bot.rate_limiter import RateLimiter
-import httpx
-import tomllib
 
 
 def read_token() -> str:

@@ -1,6 +1,7 @@
 # This file implements a simple interface for the public HN API using httpx' async client
 # Currently only synchronous methods are provided, this may change in the future.
 import httpx
+
 from hn_bot.bot_config import BotConfig
 
 api_url = "https://hacker-news.firebaseio.com"

@@ -1,9 +1,9 @@
+import asyncio
+
 import hn_bot.apis.async_apis.hn_api as hn_api
 import hn_bot.apis.async_apis.tg_api as tg_api
 import hn_bot.persistence as p
 from hn_bot.bot_config import BotConfig
-
-import asyncio
 
 
 def format_post(item) -> str:

@@ -1,7 +1,6 @@
-from dataclasses import dataclass
-
 import asyncio
 import queue
+from dataclasses import dataclass
 
 
 # Rate limiter class for rate limiting async tasks
