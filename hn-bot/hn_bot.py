@@ -1,14 +1,9 @@
 import apis.hn_api as hn_api
 import apis.tg_api as tg_api
 import persistence as p
-
-import time
-import asyncio
-
 from bot_config import BotConfig
 
-from dataclasses import dataclass
-from typing import AsyncIterator, ClassVar
+import asyncio
 
 from queue import Queue
 

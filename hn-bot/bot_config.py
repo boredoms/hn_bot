@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 import sqlite3
-from typing import AsyncIterator, ClassVar
+from typing import ClassVar
 import persistence as p
 from rate_limiter import RateLimiter
+import httpx
 
 
 def read_token() -> str:
@@ -18,6 +19,7 @@ class BotConfig:
     tg_api_rate_limiter: RateLimiter
     db_connection: sqlite3.Connection
     db_cursor: sqlite3.Cursor
+    async_http_client: httpx.AsyncClient
 
     instance: ClassVar = None
     token_path: ClassVar[str] = "bot-token"
@@ -34,6 +36,7 @@ class BotConfig:
                 tg_api_rate_limiter=RateLimiter(1, 3000),
                 db_connection=connection,
                 db_cursor=cursor,
+                async_http_client=httpx.AsyncClient(),
             )
 
             # when initializing the config instance, we want to create the table if it does not exist
