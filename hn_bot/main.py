@@ -1,13 +1,9 @@
-import apis.hn_api as hn_api
-import apis.tg_api as tg_api
+import apis.async_apis.hn_api as hn_api
+import apis.async_apis.tg_api as tg_api
 import persistence as p
 from bot_config import BotConfig
 
 import asyncio
-
-from queue import Queue
-
-post_queue = Queue()
 
 
 def format_post(item) -> str:
@@ -19,7 +15,7 @@ def format_post(item) -> str:
 
 
 async def fetch_post(id: str) -> dict | None:
-    item = hn_api.get_item(id)
+    item = await hn_api.get_item(id)
 
     if item is None:
         print(f"fetching the post failed (id={id})")
@@ -51,7 +47,7 @@ async def make_or_edit_post(post: dict):
     await config.tg_api_rate_limiter.wait()
 
     if post_data is None:
-        response = tg_api.send_message(
+        response = await tg_api.send_message(
             config.token, "@distraction_free_hacker_news", message_body
         )
 
@@ -60,7 +56,7 @@ async def make_or_edit_post(post: dict):
 
         p.insert_post(post)
     else:
-        tg_api.edit_message_text(
+        await tg_api.edit_message_text(
             config.token,
             "@distraction_free_hacker_news",
             str(post_data[6]),
@@ -73,7 +69,7 @@ async def main():
     print("Hello from hn-bot!")
 
     while True:
-        top_posts = hn_api.get_topstories()
+        top_posts = await hn_api.get_topstories()
 
         if top_posts is None:
             print("Error getting top posts")
