@@ -32,6 +32,7 @@ async def make_or_edit_post(post: dict):
     # either none or tuple (hn_id, url, title, date, score, comments, tg_id)
     post_data = p.get_post(post["id"])
 
+    # exit early if we have posted it already and the karma has not changed
     if post_data is not None:
         # check if there is a difference to the current text in the channel
         score = post_data[4]
@@ -43,6 +44,9 @@ async def make_or_edit_post(post: dict):
     message_body = format_post(post)
 
     await config.tg_api_rate_limiter.wait()
+
+    # need to refresh post data since it might have changed while we waited for our request to be allowed
+    post_data = p.get_post(post["id"])
 
     if post_data is None:
         response = await tg_api.send_message(
@@ -75,9 +79,6 @@ async def main():
         top_posts = top_posts[:10]
 
         posts = await asyncio.gather(*[fetch_post(id) for id in top_posts])
-
-        # insert the posts that are going to be made
-        BotConfig.get().db_connection.commit()
 
         for post in posts:
             if post is None:
