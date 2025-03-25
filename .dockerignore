@@ -1,0 +1,7 @@
+.venv
+.git
+.ruff_cache
+hn_bot.db
+dist
+hn_bot.egg-info
+**/__pycache__
