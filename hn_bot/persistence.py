@@ -1,7 +1,5 @@
 import sqlite3
 
-from hn_bot.bot_config import BotConfig
-
 
 def connect():
     return sqlite3.connect("hn_bot.db")
@@ -13,35 +11,27 @@ def create_database(connection: sqlite3.Connection):
     )
 
 
-def insert_post(item: dict):
-    cursor = BotConfig.get().db_cursor
-
+def insert_post(item: dict, cursor):
     cursor.execute(
         "INSERT INTO posts VALUES(:id, :url, :title, :time, :score, :descendants, :tg_id)",
         item,
     )
 
 
-def update_post(item: dict):
-    cursor = BotConfig.get().db_cursor
-
+def update_post(item: dict, cursor):
     cursor.execute(
         "UPDATE posts SET score = :score, comments = :descendants WHERE hn_id = :id",
         item,
     )
 
 
-def get_post_karma(item: dict):
-    cursor = BotConfig.get().db_cursor
-
+def get_post_karma(item: dict, cursor):
     res = cursor.execute("SELECT score FROM posts WHERE hn_id = :id", item).fetchone()
 
     return res[0]
 
 
-def get_post_comments(item: dict):
-    cursor = BotConfig.get().db_cursor
-
+def get_post_comments(item: dict, cursor):
     res = cursor.execute(
         "SELECT comments FROM posts WHERE hn_id = :id", item
     ).fetchone()
@@ -49,9 +39,7 @@ def get_post_comments(item: dict):
     return res[0]
 
 
-def get_post_scores(item: dict):
-    cursor = BotConfig.get().db_cursor
-
+def get_post_scores(item: dict, cursor):
     res = cursor.execute(
         "SELECT score, comments FROM posts WHERE hn_id = :id", item
     ).fetchone()
@@ -60,8 +48,7 @@ def get_post_scores(item: dict):
 
 
 # check if the post and its corresponding id already exists in the DB
-def get_postid(id: int) -> int | None:
-    cursor = BotConfig.get().db_cursor
+def get_postid(id: int, cursor) -> int | None:
     res = cursor.execute("SELECT tg_id FROM posts WHERE hn_id = ?", (id,)).fetchone()
 
     if res is None:
@@ -70,12 +57,11 @@ def get_postid(id: int) -> int | None:
         return res[0]
 
 
-def get_post(id: int):
-    cursor = BotConfig.get().db_cursor
+def get_post(id: int, cursor):
     res = cursor.execute("SELECT * from posts WHERE hn_id = ?", (id,)).fetchone()
 
     return res
 
 
-def commit():
-    BotConfig.get().db_connection.commit()
+def commit(db_connection):
+    db_connection.commit()
