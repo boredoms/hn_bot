@@ -46,7 +46,7 @@ async def make_or_edit_post(post: dict):
 
     if post_data is None:
         response = await tg_api.send_message(
-            config.tg_api_token, "@distraction_free_hacker_news", message_body
+            config.tg_api_token, config.tg_channel_name, message_body
         )
         tg_id = response["result"]["message_id"]
         post["tg_id"] = tg_id
@@ -55,7 +55,7 @@ async def make_or_edit_post(post: dict):
     else:
         await tg_api.edit_message_text(
             config.tg_api_token,
-            "@distraction_free_hacker_news",
+            config.tg_channel_name,
             str(post_data[6]),
             message_body,
         )

@@ -23,8 +23,9 @@ def read_token() -> str:
 @dataclass(frozen=True)
 class BotConfig:
     tg_api_token: str
-    post_template: str
+    tg_channel_name: str
     tg_api_rate_limiter: RateLimiter
+    post_template: str
     db_connection: sqlite3.Connection
     db_cursor: sqlite3.Cursor
     async_http_client: httpx.AsyncClient
@@ -45,7 +46,7 @@ class BotConfig:
 
             with open("pyproject.toml", "rb") as f:
                 pyproject = tomllib.load(f)
-                config = pyproject["project"]["config"]
+                config = pyproject["hn_bot"]
 
             with open("secrets.toml", "rb") as f:
                 secrets = tomllib.load(f)
@@ -55,8 +56,9 @@ class BotConfig:
 
             BotConfig.instance = BotConfig(
                 tg_api_token=secrets["tg_api_token"],
-                post_template=config["post_template"],
+                tg_channel_name=config["tg_channel_name"],
                 tg_api_rate_limiter=RateLimiter(1, config["tg_api_rate"]),
+                post_template=config["post_template"],
                 db_connection=connection,
                 db_cursor=cursor,
                 async_http_client=httpx.AsyncClient(),
