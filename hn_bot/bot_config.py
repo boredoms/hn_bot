@@ -5,8 +5,8 @@ from typing import ClassVar
 
 import httpx
 
-import hn_bot
-from hn_bot.rate_limiter import RateLimiter
+import hn_bot.persistence
+import hn_bot.rate_limiter
 
 
 def read_token() -> str:
@@ -26,7 +26,7 @@ def read_token() -> str:
 class BotConfig:
     tg_api_token: str
     tg_channel_name: str
-    tg_api_rate_limiter: RateLimiter
+    tg_api_rate_limiter: hn_bot.rate_limiter.RateLimiter
     post_template: str
     db_connection: sqlite3.Connection
     db_cursor: sqlite3.Cursor
@@ -59,7 +59,9 @@ class BotConfig:
             BotConfig.instance = BotConfig(
                 tg_api_token=secrets["tg_api_token"],
                 tg_channel_name=config["tg_channel_name"],
-                tg_api_rate_limiter=RateLimiter(1, config["tg_api_rate"]),
+                tg_api_rate_limiter=hn_bot.rate_limiter.RateLimiter(
+                    1, config["tg_api_rate"]
+                ),
                 post_template=config["post_template"],
                 db_connection=connection,
                 db_cursor=cursor,

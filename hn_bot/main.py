@@ -30,7 +30,7 @@ async def make_or_edit_post(post: dict):
     config = BotConfig.get()
 
     # either none or tuple (hn_id, url, title, date, score, comments, tg_id)
-    post_data = p.get_post(post["id"])
+    post_data = p.get_post(post["id"], BotConfig.get().db_cursor)
 
     # exit early if we have posted it already and the karma has not changed
     if post_data is not None:
@@ -46,7 +46,7 @@ async def make_or_edit_post(post: dict):
     await config.tg_api_rate_limiter.wait()
 
     # need to refresh post data since it might have changed while we waited for our request to be allowed
-    post_data = p.get_post(post["id"])
+    post_data = p.get_post(post["id"], BotConfig.get().db_cursor)
 
     if post_data is None:
         response = await tg_api.send_message(
@@ -55,7 +55,7 @@ async def make_or_edit_post(post: dict):
         tg_id = response["result"]["message_id"]
         post["tg_id"] = tg_id
 
-        p.insert_post(post)
+        p.insert_post(post, BotConfig.get().db_cursor)
     else:
         await tg_api.edit_message_text(
             config.tg_api_token,
@@ -63,7 +63,7 @@ async def make_or_edit_post(post: dict):
             str(post_data[6]),
             message_body,
         )
-        p.update_post(post)
+        p.update_post(post, BotConfig.get().db_cursor)
 
 
 async def main():
@@ -92,7 +92,7 @@ async def main():
 
             asyncio.create_task(make_or_edit_post(post))
 
-        p.commit()
+        p.commit(BotConfig.get().db_connection)
         await asyncio.sleep(BotConfig.get().sleep_time)
 
 
@@ -101,4 +101,12 @@ if __name__ == "__main__":
         asyncio.run(main())
     except KeyboardInterrupt:
         print("Committing unsaved changes to DB")
-        p.commit()
+        p.commit(BotConfig.get().db_connection)
+
+
+def run_bot():
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("Committing unsaved changes to DB")
+        p.commit(BotConfig.get().db_connection)

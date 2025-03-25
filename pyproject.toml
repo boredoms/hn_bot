@@ -6,6 +6,13 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = ["httpx>=0.28.1"]
 
+[project.scripts]
+bot = "hn_bot.main:run_bot"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [hn_bot]
 tg_channel_name = "@distraction_free_hacker_news"
 tg_api_rate = 3
