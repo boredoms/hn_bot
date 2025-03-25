@@ -12,5 +12,5 @@ wheels/
 # Secrets
 secrets.toml
 
-# Project files
+# SQLite database
 hn_bot.db
