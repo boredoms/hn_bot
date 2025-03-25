@@ -33,7 +33,7 @@ class BotConfig:
             BotConfig.instance = BotConfig(
                 token=read_token(),
                 post_template="",
-                tg_api_rate_limiter=RateLimiter(1, 3000),
+                tg_api_rate_limiter=RateLimiter(1, 3),
                 db_connection=connection,
                 db_cursor=cursor,
                 async_http_client=httpx.AsyncClient(),
