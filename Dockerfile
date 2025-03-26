@@ -8,9 +8,6 @@ ENV UV_COMPILE_BYTECODE=1
 
 # set the working directory
 WORKDIR /app
-RUN uv sync --frozen &&\
-  useradd user
-
-USER user
+RUN uv sync --frozen
 
 CMD [ "uv", "run", "bot" ]
