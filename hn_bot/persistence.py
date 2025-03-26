@@ -2,7 +2,7 @@ import sqlite3
 
 
 def connect():
-    return sqlite3.connect("hn_bot.db")
+    return sqlite3.connect("data/hn_bot.db")
 
 
 def create_database(connection: sqlite3.Connection):
