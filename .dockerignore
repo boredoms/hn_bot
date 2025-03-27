@@ -1,6 +1,7 @@
 .venv
 .git
 .ruff_cache
+data/hn_bot.db
 hn_bot.db
 dist
 hn_bot.egg-info
