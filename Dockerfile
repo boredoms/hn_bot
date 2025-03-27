@@ -11,6 +11,4 @@ WORKDIR /app
 RUN mkdir data &&\
   uv sync --frozen 
 
-VOLUME "/app/data" "/app/config"
-
 CMD [ "uv", "run", "bot" ]
