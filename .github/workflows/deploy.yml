@@ -18,7 +18,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: 22
           script: |
-            docker stop hn_bot; \
-            docker rm hn_bot; \
-            docker pull voetschm/hn_bot:latest; \
-            docker run -d -v ./data:/data hn_bot;
+            docker stop voetschm/hn_bot
+            docker rm voetschm/hn_bot
+            docker pull voetschm/hn_bot
+            docker run -d -v ./data:/data voetschm/hn_bot
