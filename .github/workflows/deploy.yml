@@ -1,0 +1,24 @@
+name: Deploy to Hetzner
+
+on:
+  workflow_run:
+    workflows: ["Publish Docker Image to Docker Hub"]
+    types:
+    - completed
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: $${{ secrets.SSH_KEY }}
+          port: 22
+          script: |
+            docker stop hn_bot; \
+            docker rm hn_bot; \
+            docker pull voetschm/hn_bot:latest; \
+            docker run -d -v ./data:/data hn_bot;
