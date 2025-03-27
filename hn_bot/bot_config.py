@@ -33,7 +33,6 @@ class BotConfig:
     async_http_client: httpx.AsyncClient
 
     instance: ClassVar = None
-    token_path: ClassVar[str] = "bot-token"
 
     sleep_time: int
 
@@ -50,7 +49,7 @@ class BotConfig:
                 pyproject = tomllib.load(f)
                 config = pyproject["hn_bot"]
 
-            with open("secrets.toml", "rb") as f:
+            with open("config/secrets.toml", "rb") as f:
                 secrets = tomllib.load(f)
 
             connection = hn_bot.persistence.connect()
