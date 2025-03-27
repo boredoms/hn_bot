@@ -76,8 +76,6 @@ async def main():
             print("Error getting top posts")
             return
 
-        top_posts = top_posts[:10]
-
         posts = await asyncio.gather(*[fetch_post(id) for id in top_posts])
 
         for post in posts:
