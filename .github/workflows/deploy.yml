@@ -21,4 +21,4 @@ jobs:
             docker stop voetschm/hn_bot
             docker rm voetschm/hn_bot
             docker pull voetschm/hn_bot
-            docker run -d -v ./data:/data voetschm/hn_bot
+            docker run -d -v ./data:/data -v ./config:/config voetschm/hn_bot
