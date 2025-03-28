@@ -7,7 +7,7 @@ api_url = "https://api.telegram.org"
 logger = logging.getLogger(__name__)
 
 
-def make_api_post(request_url: str, data: Any):
+def make_api_post(request_url: str, data):
     try:
         response = httpx.post(request_url, data=data)
         return response.json()
