@@ -1,6 +1,6 @@
 [project]
 name = "hn_bot"
-version = "0.1.2"
+version = "0.2.0"
 description = "A telegram bot to scrape hacker news, but in a less distracting way than the bots that currently exist."
 readme = "README.md"
 requires-python = ">=3.13"
