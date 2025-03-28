@@ -1,10 +1,21 @@
 import asyncio
 import logging
+import logging.handlers
 
 import hn_bot.apis.async_apis.hn_api as hn_api
 import hn_bot.apis.async_apis.tg_api as tg_api
 import hn_bot.persistence as p
 from hn_bot.bot_config import BotConfig
+
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO,
+    handlers=[
+        logging.handlers.RotatingFileHandler(
+            "config/hn_bot.log", maxBytes=10_000_000, backupCount=3
+        )
+    ],
+)
 
 logger = logging.getLogger(__name__)
 
