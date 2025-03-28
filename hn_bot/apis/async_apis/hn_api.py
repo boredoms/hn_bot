@@ -1,11 +1,15 @@
 # This file implements a simple interface for the public HN API using httpx' async client
 # Currently only synchronous methods are provided, this may change in the future.
 import httpx
+import json
+import logging
 
 from hn_bot.bot_config import BotConfig
 
 api_url = "https://hacker-news.firebaseio.com"
 api_version = "v0"
+
+logger = logging.getLogger(__name__)
 
 
 async def get_json(request_url: str):
@@ -13,9 +17,13 @@ async def get_json(request_url: str):
         response = await BotConfig.get().async_http_client.get(request_url)
         return response.json()
     except httpx.HTTPStatusError as e:
-        print(f"HTTP Error: {e.response.status_code}")
+        logger.error(
+            f"error response {e.response.status_code} for request {e.request.url}"
+        )
     except httpx.RequestError as e:
-        print(f"RequestError: {e.request.url!r}")
+        logger.error(f"error making request {e.request.url}")
+    except json.JSONDecodeError as e:
+        logger.error(f"error decoding json in response {e.doc} at position {e.pos}")
 
     # error handling here
     return None
