@@ -9,68 +9,62 @@ import hn_bot.persistence
 import hn_bot.rate_limiter
 
 
-def read_token() -> str:
-    with open("bot-token") as f:
-        token = f.readline()
-        return token.strip()
-
-
-# global singleton to hold the configuration of the entire bot
-# making it a singleton ensures that we only have one active database connection/async_http_client
+# class to hold the configuration of the entire bot
 #
 # since the entire app is single threaded async, this means we save a lot of time running buildup
 # and teardown code for http clients and database connections
 #
-# this class is immutable, preventing the usual problem of entagling global state
+# this class is immutable, as we don't want to dynamically change the config
 @dataclass(frozen=True)
 class BotConfig:
+    # config for the telegram API interaction
     tg_api_token: str
     tg_channel_name: str
     tg_api_rate_limiter: hn_bot.rate_limiter.RateLimiter
     post_template: str
+
+    # config for the database interaction
     db_connection: sqlite3.Connection
     db_cursor: sqlite3.Cursor
+
+    # the async html client to use
     async_http_client: httpx.AsyncClient
 
-    instance: ClassVar = None
-
+    # time between fetching new posts
     sleep_time: int
 
+    # minimum amount of karma and posts of an item to be posted to the channel
     hn_min_karma: int
     hn_min_comments: int
 
     @staticmethod
-    def get():
-        if BotConfig.instance is None:
-            config = None
-            secrets = None
+    def read_from_file(config_path: str, secrets_path: str):
+        config = None
+        secrets = None
 
-            with open("pyproject.toml", "rb") as f:
-                pyproject = tomllib.load(f)
-                config = pyproject["hn_bot"]
+        with open(config_path, "rb") as f:
+            pyproject = tomllib.load(f)
+            config = pyproject["hn_bot"]
 
-            with open("config/secrets.toml", "rb") as f:
-                secrets = tomllib.load(f)
+        with open(secrets_path, "rb") as f:
+            secrets = tomllib.load(f)
 
-            connection = hn_bot.persistence.connect()
-            cursor = connection.cursor()
+        connection = hn_bot.persistence.connect()
+        cursor = connection.cursor()
 
-            BotConfig.instance = BotConfig(
-                tg_api_token=secrets["tg_api_token"],
-                tg_channel_name=config["tg_channel_name"],
-                tg_api_rate_limiter=hn_bot.rate_limiter.RateLimiter(
-                    1, config["tg_api_rate"]
-                ),
-                post_template=config["post_template"],
-                db_connection=connection,
-                db_cursor=cursor,
-                async_http_client=httpx.AsyncClient(),
-                sleep_time=config["sleep_time"],
-                hn_min_karma=config["hn_min_karma"],
-                hn_min_comments=config["hn_min_comments"],
-            )
+        hn_bot.persistence.create_database(connection)
 
-            # when initializing the config instance, we want to create the table if it does not exist
-            hn_bot.persistence.create_database(BotConfig.instance.db_connection)
-
-        return BotConfig.instance
+        return BotConfig(
+            tg_api_token=secrets["tg_api_token"],
+            tg_channel_name=config["tg_channel_name"],
+            tg_api_rate_limiter=hn_bot.rate_limiter.RateLimiter(
+                1, config["tg_api_rate"]
+            ),
+            post_template=config["post_template"],
+            db_connection=connection,
+            db_cursor=cursor,
+            async_http_client=httpx.AsyncClient(),
+            sleep_time=config["sleep_time"],
+            hn_min_karma=config["hn_min_karma"],
+            hn_min_comments=config["hn_min_comments"],
+        )

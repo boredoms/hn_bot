@@ -1,17 +1,15 @@
-from hn_bot.bot_config import BotConfig
 import logging
 import json
 import httpx
 
 api_url = "https://api.telegram.org"
 
-_async_client = BotConfig.get().async_http_client
 logger = logging.getLogger(__name__)
 
 
-async def make_api_post(request_url: str, data):
+async def make_api_post(request_url: str, data, async_client: httpx.AsyncClient):
     try:
-        response = await _async_client.post(request_url, data=data)
+        response = await async_client.post(request_url, data=data)
         return response.json()
     except httpx.HTTPStatusError as e:
         logger.error(
@@ -25,9 +23,9 @@ async def make_api_post(request_url: str, data):
     return None
 
 
-async def make_api_get(request_url: str):
+async def make_api_get(request_url: str, async_client: httpx.AsyncClient):
     try:
-        response = await _async_client.get(request_url)
+        response = await async_client.get(request_url)
         return response.json()
     except httpx.HTTPStatusError as e:
         logger.error(
@@ -41,17 +39,27 @@ async def make_api_get(request_url: str):
     return None
 
 
-async def send_message(token: str, chat_id: str, text: str):
+async def send_message(
+    token: str, chat_id: str, text: str, async_client: httpx.AsyncClient
+):
     token = "bot" + token
 
     request_url = "/".join([api_url, token, "sendMessage"])
 
     return await make_api_post(
-        request_url, {"chat_id": chat_id, "text": text, "parse_mode": "HTML"}
+        request_url,
+        {"chat_id": chat_id, "text": text, "parse_mode": "HTML"},
+        async_client,
     )
 
 
-async def edit_message_text(token: str, chat_id: str, message_id: str, text: str):
+async def edit_message_text(
+    token: str,
+    chat_id: str,
+    message_id: str,
+    text: str,
+    async_client: httpx.AsyncClient,
+):
     token = "bot" + token
 
     request_url = "/".join([api_url, token, "editMessageText"])
@@ -64,11 +72,12 @@ async def edit_message_text(token: str, chat_id: str, message_id: str, text: str
             "text": text,
             "parse_mode": "HTML",
         },
+        async_client,
     )
 
 
-async def get_me(token: str):
+async def get_me(token: str, async_client: httpx.AsyncClient):
     token = "bot" + token
     request_url = "/".join([api_url, token, "getMe"])
 
-    return await make_api_get(request_url)
+    return await make_api_get(request_url, async_client)

@@ -9,16 +9,16 @@ from hn_bot.bot_config import BotConfig
 logger = logging.getLogger(__name__)
 
 
-def format_post(item) -> str:
-    return BotConfig.get().post_template.format(
+def format_post(item, post_template: str) -> str:
+    return post_template.format(
         item["title"], item["url"], item["score"], item["descendants"]
     )
 
 
-async def fetch_post(id: str) -> dict | None:
+async def fetch_post(id: str, config: BotConfig) -> dict | None:
     logger.info(f"Fetching post {id}")
 
-    item = await hn_api.get_item(id)
+    item = await hn_api.get_item(id, config.async_http_client)
 
     if item is None:
         return None
@@ -30,11 +30,9 @@ async def fetch_post(id: str) -> dict | None:
     return item
 
 
-async def make_or_edit_post(post: dict):
-    config = BotConfig.get()
-
+async def make_or_edit_post(post: dict, config: BotConfig):
     # either none or tuple (hn_id, url, title, date, score, comments, tg_id)
-    post_data = p.get_post(post["id"], BotConfig.get().db_cursor)
+    post_data = p.get_post(post["id"], config.db_cursor)
 
     # exit early if we have posted it already and the karma has not changed
     if post_data is not None:
@@ -45,66 +43,78 @@ async def make_or_edit_post(post: dict):
         if post["score"] == score and post["descendants"] == comments:
             return
 
-    message_body = format_post(post)
+    message_body = format_post(post, config.post_template)
 
     await config.tg_api_rate_limiter.wait()
 
     # need to refresh post data since it might have changed while we waited for our request to be allowed
-    post_data = p.get_post(post["id"], BotConfig.get().db_cursor)
+    post_data = p.get_post(post["id"], config.db_cursor)
 
     if post_data is None:
         response = await tg_api.send_message(
-            config.tg_api_token, config.tg_channel_name, message_body
+            config.tg_api_token,
+            config.tg_channel_name,
+            message_body,
+            config.async_http_client,
         )
+
+        # this might happen due to connectivity or config issues
+        if response is None:
+            return
+
         tg_id = response["result"]["message_id"]
         post["tg_id"] = tg_id
 
-        p.insert_post(post, BotConfig.get().db_cursor)
+        p.insert_post(post, config.db_cursor)
     else:
         await tg_api.edit_message_text(
             config.tg_api_token,
             config.tg_channel_name,
             str(post_data[6]),
             message_body,
+            config.async_http_client,
         )
-        p.update_post(post, BotConfig.get().db_cursor)
+
+        p.update_post(post, config.db_cursor)
 
 
-async def main():
+async def main(config: BotConfig):
     logging.info("starting hn_bot")
 
     while True:
         logging.info("fetching top stories")
-        top_posts = await hn_api.get_topstories()
+        top_posts = await hn_api.get_topstories(config.async_http_client)
 
         # if there is a network error we want to retry later
         if top_posts is None:
             logging.error("fetching posts did not work, retrying later")
-            await asyncio.sleep(BotConfig.get().sleep_time)
+            await asyncio.sleep(config.sleep_time)
 
             continue
 
-        posts = await asyncio.gather(*[fetch_post(id) for id in top_posts])
+        posts = await asyncio.gather(*[fetch_post(id, config) for id in top_posts])
 
         for post in posts:
             if post is None:
                 continue
 
             if (
-                post["score"] < BotConfig.get().hn_min_karma
-                or post["descendants"] < BotConfig.get().hn_min_comments
+                post["score"] < config.hn_min_karma
+                or post["descendants"] < config.hn_min_comments
             ):
                 continue
 
-            asyncio.create_task(make_or_edit_post(post))
+            asyncio.create_task(make_or_edit_post(post, config))
 
-        p.commit(BotConfig.get().db_connection)
-        await asyncio.sleep(BotConfig.get().sleep_time)
+        p.commit(config.db_connection)
+        await asyncio.sleep(config.sleep_time)
 
 
 def run_bot():
+    config = BotConfig.read_from_file("pyproject.toml", "config/secrets.toml")
+
     try:
-        asyncio.run(main())
+        asyncio.run(main(config))
     except KeyboardInterrupt:
         logging.info("committing unsaved changes to DB")
-        p.commit(BotConfig.get().db_connection)
+        p.commit(config.db_connection)
