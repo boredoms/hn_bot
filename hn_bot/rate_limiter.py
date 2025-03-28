@@ -81,17 +81,3 @@ class RateLimiter:
             self.waiting.put(future)
 
         await future
-
-
-async def request(rate_limiter):
-    await rate_limiter.wait()
-    print("grungle")
-
-
-async def uwu():
-    rate_limiter = RateLimiter(100, 1)
-    await asyncio.gather(*[request(rate_limiter) for _ in range(20)])
-
-
-if __name__ == "__main__":
-    asyncio.run(uwu())
