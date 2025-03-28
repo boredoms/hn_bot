@@ -1,9 +1,12 @@
 import asyncio
+import logging
 
 import hn_bot.apis.async_apis.hn_api as hn_api
 import hn_bot.apis.async_apis.tg_api as tg_api
 import hn_bot.persistence as p
 from hn_bot.bot_config import BotConfig
+
+logger = logging.getLogger(__name__)
 
 
 def format_post(item) -> str:
@@ -13,14 +16,15 @@ def format_post(item) -> str:
 
 
 async def fetch_post(id: str) -> dict | None:
+    logger.info(f"Fetching post {id}")
+
     item = await hn_api.get_item(id)
 
     if item is None:
-        print(f"fetching the post failed (id={id})")
         return None
 
     if "url" not in item:
-        print(f"post {id} does not have a URL")
+        logger.info(f"item {id} has no url")
         return None
 
     return item
@@ -67,14 +71,18 @@ async def make_or_edit_post(post: dict):
 
 
 async def main():
-    print("Hello from hn-bot!")
+    logging.info("starting hn_bot")
 
     while True:
+        logging.info("fetching top stories")
         top_posts = await hn_api.get_topstories()
 
+        # if there is a network error we want to retry later
         if top_posts is None:
-            print("Error getting top posts")
-            return
+            logging.error("fetching posts did not work, retrying later")
+            await asyncio.sleep(BotConfig.get().sleep_time)
+
+            continue
 
         posts = await asyncio.gather(*[fetch_post(id) for id in top_posts])
 
@@ -94,17 +102,9 @@ async def main():
         await asyncio.sleep(BotConfig.get().sleep_time)
 
 
-if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        print("Committing unsaved changes to DB")
-        p.commit(BotConfig.get().db_connection)
-
-
 def run_bot():
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print("Committing unsaved changes to DB")
+        logging.info("committing unsaved changes to DB")
         p.commit(BotConfig.get().db_connection)
