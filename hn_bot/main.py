@@ -9,10 +9,9 @@ from hn_bot.bot_config import BotConfig
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO,
     handlers=[
         logging.handlers.RotatingFileHandler(
-            "config/hn_bot.log", maxBytes=10_000_000, backupCount=3
+            "data/hn_bot.log", maxBytes=10_000_000, backupCount=3
         )
     ],
 )
@@ -128,4 +127,9 @@ def run_bot():
         asyncio.run(main(config))
     except KeyboardInterrupt:
         logging.info("committing unsaved changes to DB")
+
+        # clean up the database
         p.commit(config.db_connection)
+
+        config.db_cursor.close()
+        config.db_connection.close()
