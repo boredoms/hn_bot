@@ -20,5 +20,6 @@ jobs:
           script: |
             docker stop voetschm/hn_bot
             docker rm voetschm/hn_bot
+            fuser --kill data/hn_bot.db
             docker pull voetschm/hn_bot
             docker run -d -v ./data:/app/data -v ./config:/app/config voetschm/hn_bot
