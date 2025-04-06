@@ -72,6 +72,10 @@ async def make_or_edit_post(post: dict, config: BotConfig):
         if response is None:
             return
 
+        if "result" not in response:
+            logger.warning(f"unexpected response object: {response}")
+            return
+
         tg_id = response["result"]["message_id"]
         post["tg_id"] = tg_id
 
