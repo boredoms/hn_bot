@@ -14,16 +14,11 @@ async def get_json(request_url: str, async_client: httpx.AsyncClient):
     try:
         response = await async_client.get(request_url)
         return response.json()
-    except httpx.HTTPStatusError as e:
-        logger.error(
-            f"error response {e.response.status_code} for request {e.request.url}"
-        )
-    except httpx.RequestError as e:
-        logger.error(f"error making request {e.request.url} - {e}")
     except json.JSONDecodeError as e:
         logger.error(f"error decoding json in response {e.doc} at position {e.pos}")
+    except httpx.HTTPError as exc:
+        logger.error(f"HTTP Error: {exc}")
 
-    # error handling here
     return None
 
 

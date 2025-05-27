@@ -11,14 +11,10 @@ async def make_api_post(request_url: str, data, async_client: httpx.AsyncClient)
     try:
         response = await async_client.post(request_url, data=data)
         return response.json()
-    except httpx.HTTPStatusError as e:
-        logger.error(
-            f"error response {e.response.status_code} for request {e.request.url}"
-        )
-    except httpx.RequestError as e:
-        logger.error(f"error making request {e.request.url} - {e}")
     except json.JSONDecodeError as e:
         logger.error(f"error decoding json in response {e.doc} at position {e.pos}")
+    except httpx.HTTPError as exc:
+        logger.error(f"HTTP Error: {exc}")
 
     return None
 
@@ -27,14 +23,10 @@ async def make_api_get(request_url: str, async_client: httpx.AsyncClient):
     try:
         response = await async_client.get(request_url)
         return response.json()
-    except httpx.HTTPStatusError as e:
-        logger.error(
-            f"error response {e.response.status_code} for request {e.request.url}"
-        )
-    except httpx.RequestError as e:
-        logger.error(f"error making request {e.request.url}")
     except json.JSONDecodeError as e:
         logger.error(f"error decoding json in response {e.doc} at position {e.pos}")
+    except httpx.HTTPError as exc:
+        logger.error(f"HTTP ERROR: {exc}")
 
     return None
 
