@@ -11,14 +11,10 @@ def make_api_post(request_url: str, data):
     try:
         response = httpx.post(request_url, data=data)
         return response.json()
-    except httpx.HTTPStatusError as e:
-        logger.error(
-            f"error response {e.response.status_code} for request {e.request.url}"
-        )
-    except httpx.RequestError as e:
-        logger.error(f"error making request {e.request.url} - {e}")
     except json.JSONDecodeError as e:
         logger.error(f"error decoding json in response {e.doc} at position {e.pos}")
+    except httpx.HTTPError as exc:
+        logger.error(f"HTTP Error - {type(exc)}: {exc}")
 
     return None
 
@@ -27,14 +23,10 @@ def make_api_get(request_url: str):
     try:
         response = httpx.get(request_url)
         return response.json()
-    except httpx.HTTPStatusError as e:
-        logger.error(
-            f"error response {e.response.status_code} for request {e.request.url}"
-        )
-    except httpx.RequestError as e:
-        logger.error(f"error making request {e.request.url}")
     except json.JSONDecodeError as e:
         logger.error(f"error decoding json in response {e.doc} at position {e.pos}")
+    except httpx.HTTPError as exc:
+        logger.error(f"HTTP Error - {type(exc)}: {exc}")
 
     return None
 

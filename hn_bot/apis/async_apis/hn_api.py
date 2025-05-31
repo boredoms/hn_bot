@@ -17,7 +17,7 @@ async def get_json(request_url: str, async_client: httpx.AsyncClient):
     except json.JSONDecodeError as e:
         logger.error(f"error decoding json in response {e.doc} at position {e.pos}")
     except httpx.HTTPError as exc:
-        logger.error(f"HTTP Error: {exc}")
+        logger.error(f"HTTP Error - {type(exc)}: {exc}")
 
     return None
 

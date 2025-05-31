@@ -14,7 +14,7 @@ async def make_api_post(request_url: str, data, async_client: httpx.AsyncClient)
     except json.JSONDecodeError as e:
         logger.error(f"error decoding json in response {e.doc} at position {e.pos}")
     except httpx.HTTPError as exc:
-        logger.error(f"HTTP Error: {exc}")
+        logger.error(f"HTTP Error - {type(exc)}: {exc}")
 
     return None
 
@@ -26,7 +26,7 @@ async def make_api_get(request_url: str, async_client: httpx.AsyncClient):
     except json.JSONDecodeError as e:
         logger.error(f"error decoding json in response {e.doc} at position {e.pos}")
     except httpx.HTTPError as exc:
-        logger.error(f"HTTP ERROR: {exc}")
+        logger.error(f"HTTP Error - {type(exc)}: {exc}")
 
     return None
 
