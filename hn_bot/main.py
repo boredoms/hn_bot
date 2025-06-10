@@ -1,4 +1,5 @@
 import asyncio
+import html
 import logging
 import logging.handlers
 
@@ -21,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 def format_post(item, post_template: str) -> str:
     return post_template.format(
-        item["title"], item["url"], item["score"], item["descendants"]
+        html.escape(item["title"]), item["url"], item["score"], item["descendants"]
     )
 
 
@@ -34,7 +35,7 @@ async def fetch_post(id: str, config: BotConfig) -> dict | None:
         return None
 
     if "url" not in item:
-        logger.info(f"item {id} has no url")
+        logger.warning(f"item {id} has no url")
         return None
 
     return item
@@ -73,7 +74,7 @@ async def make_or_edit_post(post: dict, config: BotConfig):
             return
 
         if "result" not in response:
-            logger.warning(f"unexpected response object: {response}")
+            logger.warning(f"unexpected response object for {post_data}: {response}")
             return
 
         tg_id = response["result"]["message_id"]
