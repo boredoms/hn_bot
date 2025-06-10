@@ -2,6 +2,7 @@
 # Currently only synchronous methods are provided, this may change in the future.
 import asyncio
 import httpx
+import random
 import json
 import logging
 
@@ -23,7 +24,11 @@ async def get_json(request_url: str, async_client: httpx.AsyncClient):
         except httpx.HTTPError as exc:
             logger.error(f"HTTP Error - {type(exc)}: {exc}")
 
+        # add jitter to the sleep time
+        sleep_time += random.normalvariate(sigma=num_tries + 1)
+
         await asyncio.sleep(sleep_time)
+
         num_tries += 1
         sleep_time *= 2
 
