@@ -35,7 +35,7 @@ async def fetch_post(id: str, config: BotConfig) -> dict | None:
         return None
 
     if "url" not in item:
-        logger.warning(f"item {id} has no url")
+        logger.info(f"item {id} has no url")
         return None
 
     return item
