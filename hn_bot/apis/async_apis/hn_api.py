@@ -1,5 +1,6 @@
 # This file implements a simple interface for the public HN API using httpx' async client
 # Currently only synchronous methods are provided, this may change in the future.
+import asyncio
 import httpx
 import json
 import logging
@@ -11,14 +12,22 @@ logger = logging.getLogger(__name__)
 
 
 async def get_json(request_url: str, async_client: httpx.AsyncClient):
-    try:
-        response = await async_client.get(request_url)
-        return response.json()
-    except json.JSONDecodeError as e:
-        logger.error(f"error decoding json in response {e.doc} at position {e.pos}")
-    except httpx.HTTPError as exc:
-        logger.error(f"HTTP Error - {type(exc)}: {exc}")
+    num_tries = 0
+    sleep_time = 5.0
+    while num_tries < 3:
+        try:
+            response = await async_client.get(request_url)
+            return response.json()
+        except json.JSONDecodeError as e:
+            logger.error(f"error decoding json in response {e.doc} at position {e.pos}")
+        except httpx.HTTPError as exc:
+            logger.error(f"HTTP Error - {type(exc)}: {exc}")
 
+        await asyncio.sleep(sleep_time)
+        num_tries += 1
+        sleep_time *= 2
+
+    logger.error(f"too many errors for request_url: {request_url} - giving up")
     return None
 
 
