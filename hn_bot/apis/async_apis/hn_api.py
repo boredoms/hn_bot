@@ -1,10 +1,11 @@
 # This file implements a simple interface for the public HN API using httpx' async client
 # Currently only synchronous methods are provided, this may change in the future.
 import asyncio
-import httpx
-import random
 import json
 import logging
+import random
+
+import httpx
 
 api_url = "https://hacker-news.firebaseio.com"
 api_version = "v0"

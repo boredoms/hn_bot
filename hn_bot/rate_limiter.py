@@ -9,7 +9,7 @@ from dataclasses import dataclass
 # The current implementation is primitive and does not account for early/late wakeups
 @dataclass(init=False)
 class RateLimiter:
-    waiting: queue.Queue
+    waiting: queue.Queue[asyncio.Future[None]]
     # number of requests per interval
     requests_per_interval: int
 
@@ -22,7 +22,7 @@ class RateLimiter:
     # last timestamp
     last_call: float
 
-    def __init__(self, requests_per_interval, interval):
+    def __init__(self, requests_per_interval: int, interval: float):
         self.waiting = queue.Queue()
         self.requests_per_interval = requests_per_interval
         self.interval = interval
@@ -58,7 +58,7 @@ class RateLimiter:
 
         if not self.waiting.empty():
             loop = asyncio.get_running_loop()
-            loop.call_later(self.__remaining_wait_time(), self.__wake_one)
+            _ = loop.call_later(self.__remaining_wait_time(), self.__wake_one)
 
     async def wait(self):
         loop = asyncio.get_running_loop()
@@ -73,7 +73,7 @@ class RateLimiter:
                 return
             else:
                 self.waiting.put(future)
-                loop.call_later(
+                _ = loop.call_later(
                     self.__remaining_wait_time(),
                     self.__wake_one,
                 )

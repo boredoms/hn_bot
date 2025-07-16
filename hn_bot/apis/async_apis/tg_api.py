@@ -5,15 +5,21 @@ import random
 
 import httpx
 
+from hn_bot.rate_limiter import RateLimiter
+
 api_url = "https://api.telegram.org"
 
 logger = logging.getLogger(__name__)
 
 
-async def make_api_post(request_url: str, data, async_client: httpx.AsyncClient):
+async def make_api_post(
+    request_url: str, data, async_client: httpx.AsyncClient, rate_limiter: RateLimiter
+):
     num_tries = 0
     sleep_time = 5.0
     while num_tries < 3:
+        await rate_limiter.wait()
+
         try:
             response = await async_client.post(request_url, data=data)
             return response.json()
@@ -59,7 +65,11 @@ async def make_api_get(request_url: str, async_client: httpx.AsyncClient):
 
 
 async def send_message(
-    token: str, chat_id: str, text: str, async_client: httpx.AsyncClient
+    token: str,
+    chat_id: str,
+    text: str,
+    async_client: httpx.AsyncClient,
+    rate_limiter: RateLimiter,
 ):
     token = "bot" + token
 
@@ -69,6 +79,7 @@ async def send_message(
         request_url,
         {"chat_id": chat_id, "text": text, "parse_mode": "HTML"},
         async_client,
+        rate_limiter,
     )
 
 
@@ -78,6 +89,7 @@ async def edit_message_text(
     message_id: str,
     text: str,
     async_client: httpx.AsyncClient,
+    rate_limiter: RateLimiter,
 ):
     token = "bot" + token
 
@@ -92,6 +104,7 @@ async def edit_message_text(
             "parse_mode": "HTML",
         },
         async_client,
+        rate_limiter,
     )
 
 
