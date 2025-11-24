@@ -18,8 +18,8 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: 22
           script: |
-            docker stop voetschm/hn_bot
-            docker rm voetschm/hn_bot
+            podman stop voetschm/hn_bot
+            podman rm voetschm/hn_bot
             fuser --kill data/hn_bot.db
-            docker pull voetschm/hn_bot
-            docker run -d -v ./data:/app/data -v ./config:/app/config voetschm/hn_bot
+            podman pull voetschm/hn_bot
+            podman run -d -v ./data:/app/data -v ./config:/app/config voetschm/hn_bot
